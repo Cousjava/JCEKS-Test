@@ -38,17 +38,13 @@
  * holder.
  */
 // Portions Copyright [2018] Payara Foundation and/or affiliates
-
 package fish.payara.jcekstest;
-
-import java.io.DataInputStream;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.security.DigestInputStream;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -64,9 +60,8 @@ import java.util.Enumeration;
 /**
  * This class implements an adapter for password manipulation a JCEKS.
  * <p>
- * Note that although it uses locks ('synchronized'), it tends to be created 
- * anew with each use, an inefficient and potentially problematic use that 
- * could create more than one instance accessing the same keystore at a time.
+ * Note that although it uses locks ('synchronized'), it tends to be created anew with each use, an inefficient and potentially problematic use that could
+ * create more than one instance accessing the same keystore at a time.
  */
 public final class PasswordAdapter {
 
@@ -78,24 +73,6 @@ public final class PasswordAdapter {
 
     private char[] getMasterPassword() {
         return _masterPassword;
-    }
-
-    private static String getDefaultKeyFileName() {
-        return "/home/jonathan/NetBeansProjects/Payara/appserver/distributions/payara/target/stage/payara5"
-                + File.separator + "config" + File.separator + PASSWORD_ALIAS_KEYSTORE;
-    }
-
-    /**
-     * Construct a PasswordAdapter with given Shared Master Password, SMP using the default keyfile (domain-passwords.jceks)
-     *
-     * @param masterPassword master password
-     * @throws CertificateException
-     * @throws IOException
-     * @throws KeyStoreException
-     * @throws NoSuchAlgorithmException
-     */
-    public PasswordAdapter(char[] masterPassword) throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
-        this(getDefaultKeyFileName(), masterPassword);
     }
 
     /**
@@ -110,7 +87,7 @@ public final class PasswordAdapter {
      */
     public PasswordAdapter(final String keyStoreFileName, final char[] masterPassword)
             throws CertificateException, IOException, KeyStoreException, NoSuchAlgorithmException {
-        
+
         final File keyStoreFile = new File(keyStoreFileName);
 
         _pwdStore = loadKeyStore(keyStoreFile, masterPassword);
@@ -137,14 +114,9 @@ public final class PasswordAdapter {
 
         if (keyStoreFile.exists()) {
             // don't buffer keystore; it's tiny anyway
-                //TESTTESTTEST
-                try (FileInputStream input = new FileInputStream(keyStoreFile)) {
-                    //TESTTESTTEST
-                    DataInputStream stream = new DataInputStream(new DigestInputStream(input, getPreKeyedHash(masterPassword)));
-                    //END TESTTESTTEST
-                    keyStore.load(input, masterPassword);
-            } catch (IOException | NoSuchAlgorithmException e){
-                e.printStackTrace();
+            try (FileInputStream input = new FileInputStream(keyStoreFile)) {
+                keyStore.load(input, masterPassword);
+            } catch (IOException | NoSuchAlgorithmException e) {
                 throw e;
             }
         } else {
@@ -262,7 +234,7 @@ public final class PasswordAdapter {
      */
     private KeyStore duplicateKeyStore(final char[] newMasterPassword)
             throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
-        
+
         final char[] oldMasterPassword = getMasterPassword();
 
         final KeyStore oldStore = _pwdStore;
@@ -271,7 +243,7 @@ public final class PasswordAdapter {
 
         final Enumeration<String> aliasesEnum = oldStore.aliases();
         while (aliasesEnum.hasMoreElements()) {
-            
+
             final String alias = aliasesEnum.nextElement();
 
             if (!oldStore.isKeyEntry(alias)) {
@@ -297,7 +269,7 @@ public final class PasswordAdapter {
         try (FileOutputStream out = new FileOutputStream(file)) {
             keyStore.store(out, masterPassword);
             out.close();
-        
+
         }
     }
 
@@ -307,7 +279,7 @@ public final class PasswordAdapter {
      */
     private synchronized void writeKeyStoreSafe(final char[] masterPassword)
             throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
-        
+
         final boolean keystoreExists = _keyFile.exists();
 
         // if the KeyStore exists, update it in a manner that doesn't destroy
@@ -383,24 +355,24 @@ public final class PasswordAdapter {
         writeKeyStoreSafe(newMasterPassword);
 
     }
-    
+
     /**
-     * To guard against tampering with the keystore, we append a keyed
-     * hash with a bit of whitener.
+     * To guard against tampering with the keystore, we append a keyed hash with a bit of whitener.
      */
     private static MessageDigest getPreKeyedHash(char[] password)
-    throws NoSuchAlgorithmException, UnsupportedEncodingException {
+            throws NoSuchAlgorithmException, UnsupportedEncodingException {
         int i, j;
 
         MessageDigest md = MessageDigest.getInstance("SHA");
         byte[] passwdBytes = new byte[password.length * 2];
-        for (i=0, j=0; i<password.length; i++) {
-            passwdBytes[j++] = (byte)(password[i] >> 8);
-            passwdBytes[j++] = (byte)password[i];
+        for (i = 0, j = 0; i < password.length; i++) {
+            passwdBytes[j++] = (byte) (password[i] >> 8);
+            passwdBytes[j++] = (byte) password[i];
         }
         md.update(passwdBytes);
-        for (i=0; i<passwdBytes.length; i++)
+        for (i = 0; i < passwdBytes.length; i++) {
             passwdBytes[i] = 0;
+        }
         md.update("Mighty Aphrodite".getBytes("UTF8"));
         return md;
     }
