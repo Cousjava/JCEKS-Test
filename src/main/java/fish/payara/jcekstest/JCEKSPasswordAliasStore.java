@@ -97,16 +97,6 @@ public class JCEKSPasswordAliasStore {
         return result;
     }
 
-    public void clear() {
-        try {
-            for (Enumeration<String> aliasEnum = pa().getAliases(); aliasEnum.hasMoreElements();) {
-                pa().removeAlias(aliasEnum.nextElement());
-            }
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
     public void put(String alias, char[] password) {
         final CharBuffer charBuffer = CharBuffer.wrap(password);
         final ByteBuffer byteBuffer = utf8.encode(charBuffer);
@@ -117,69 +107,11 @@ public class JCEKSPasswordAliasStore {
         }
     }
 
-    public void putAll(JCEKSPasswordAliasStore otherStore) {
-        final Map<String, char[]> entries = new HashMap<String, char[]>();
-        for (Iterator<String> aliasIt = otherStore.keys(); aliasIt.hasNext();) {
-            final String alias = aliasIt.next();
-            entries.put(alias, otherStore.get(alias));
-        }
-        putAll(entries);
-    }
-
-    public void putAll(Map<String, char[]> settings) {
-        for (Map.Entry<String, char[]> entry : settings.entrySet()) {
-            put(entry.getKey(), entry.getValue());
-        }
-        settings.clear();
-    }
-
-    public void remove(String alias) {
-        try {
-            pa().removeAlias(alias);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public boolean containsKey(String alias) {
-        try {
-            return pa().aliasExists(alias);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
     public char[] get(String alias) {
         try {
             final SecretKey secretKey = pa().getPasswordSecretKeyForAlias(alias);
             final ByteBuffer byteBuffer = ByteBuffer.wrap(secretKey.getEncoded());
             return toCharArray(utf8.decode(byteBuffer));
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public boolean isEmpty() {
-        return size() == 0;
-    }
-
-    public Iterator<String> keys() {
-        final List<String> keys = new ArrayList<String>();
-        try {
-            for (Enumeration<String> aliases = pa().getAliases(); aliases.hasMoreElements(); keys.add(aliases.nextElement())) {
-            }
-            return keys.iterator();
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public int size() {
-        try {
-            int size = 0;
-            for (Enumeration<String> aliases = pa().getAliases(); aliases.hasMoreElements(); size++, aliases.nextElement()) {
-            }
-            return size;
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

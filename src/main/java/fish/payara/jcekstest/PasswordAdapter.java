@@ -44,11 +44,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
@@ -117,6 +115,7 @@ public final class PasswordAdapter {
             try (FileInputStream input = new FileInputStream(keyStoreFile)) {
                 keyStore.load(input, masterPassword);
             } catch (IOException | NoSuchAlgorithmException e) {
+                e.printStackTrace();
                 throw e;
             }
         } else {
@@ -161,32 +160,6 @@ public final class PasswordAdapter {
             throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
 
         return (SecretKey) _pwdStore.getKey(alias, getMasterPassword());
-    }
-
-    /**
-     * See if the given alias exists
-     *
-     * @param alias the alias name
-     * @return true if the alias exists in the keystore
-     */
-    public synchronized boolean aliasExists(final String alias) throws KeyStoreException {
-        return _pwdStore.containsAlias(alias);
-    }
-
-    /**
-     * Remove an alias from the keystore
-     *
-     * @param alias The name of the alias to remove
-     * @throws KeyStoreException
-     * @throws IOException
-     * @throws NoSuchAlgorithmException
-     * @throws CertificateException
-     * @throws UnrecoverableKeyException
-     */
-    public synchronized void removeAlias(final String alias)
-            throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
-        _pwdStore.deleteEntry(alias);
-        writeStore();
     }
 
     /**
@@ -331,49 +304,4 @@ public final class PasswordAdapter {
 
     }
 
-    /**
-     * Changes the keystore password, including the encoding of the keys within it.
-     * <p>
-     * There are several error conditions that could occur:
-     * <ul>
-     * <li>Problem extracting existing alias keys with new ones.</li>
-     * <li>Problem writing the keystore, including destroying it if an I/O problem occurs.</li>
-     * <li></li>
-     * </ul>
-     * For these reasons, make a new KeyStore and write it, then swap it with the old one.
-     *
-     * @param newMasterPassword the new keystore password
-     * @throws KeyStoreException
-     * @throws IOException
-     * @throws NoSuchAlgorithmException
-     * @throws CertificateException
-     * @throws UnrecoverableKeyException
-     */
-    public synchronized void changePassword(char[] newMasterPassword)
-            throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException {
-
-        writeKeyStoreSafe(newMasterPassword);
-
-    }
-
-    /**
-     * To guard against tampering with the keystore, we append a keyed hash with a bit of whitener.
-     */
-    private static MessageDigest getPreKeyedHash(char[] password)
-            throws NoSuchAlgorithmException, UnsupportedEncodingException {
-        int i, j;
-
-        MessageDigest md = MessageDigest.getInstance("SHA");
-        byte[] passwdBytes = new byte[password.length * 2];
-        for (i = 0, j = 0; i < password.length; i++) {
-            passwdBytes[j++] = (byte) (password[i] >> 8);
-            passwdBytes[j++] = (byte) password[i];
-        }
-        md.update(passwdBytes);
-        for (i = 0; i < passwdBytes.length; i++) {
-            passwdBytes[i] = 0;
-        }
-        md.update("Mighty Aphrodite".getBytes("UTF8"));
-        return md;
-    }
 }
